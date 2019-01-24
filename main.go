@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -39,6 +41,7 @@ func getBooks(w http.ResponseWriter, r *http.Request) {
 // Get a single book
 func getBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	params := mux.Vars(r) // Get params
 
 	for _, item := range books {
@@ -52,17 +55,43 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 
 // Update book
 func updateBook(w http.ResponseWriter, r *http.Request) {
-	return
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	for index, item := range books {
+		if item.ID == params["id"] {
+			books = append(books[:index], books[index+1:]...)
+			var book Book
+			_ = json.NewDecoder(r.Body).Decode(&book)
+			book.ID = params["id"]
+			books = append(books, book)
+			json.NewEncoder(w).Encode(book)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(books)
 }
 
 // Create book
 func createBook(w http.ResponseWriter, r *http.Request) {
-	return
+	w.Header().Set("Content-Type", "application/json")
+	var book Book
+	_ = json.NewDecoder(r.Body).Decode(&book)
+	book.ID = strconv.Itoa(rand.Intn(10000000)) // Not safe DON'T USE IN PRODUCTION!!!
+	books = append(books, book)
+	json.NewEncoder(w).Encode(book)
 }
 
 // Remove book
 func deleteBook(w http.ResponseWriter, r *http.Request) {
-	return
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	for index, item := range books {
+		if item.ID == params["id"] {
+			books = append(books[:index], books[index+1:]...)
+		}
+		break
+	}
+	json.NewEncoder(w).Encode(books)
 }
 
 func handleRequest() {
